@@ -5,8 +5,8 @@ const path = require('path');
 
 const app = express();
 
-// Required to parse incoming JSON payloads
-app.use(express.json());
+// Required to parse incoming JSON payloads (10kb limit to prevent abuse)
+app.use(express.json({ limit: '10kb' }));
 
 const MONGO_URI = process.env.MONGODB_URI;
 const PORT = process.env.PORT || 8080;
@@ -16,7 +16,10 @@ if (!MONGO_URI) {
     process.exit(1); 
 }
 
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+})
     .then(() => console.log("Connected to MongoDB successfully."))
     .catch((err) => {
         console.error("Failed to connect to MongoDB on startup:", err.message);
@@ -34,8 +37,8 @@ mongoose.connection.on('disconnected', () => {
 // --- NEW LOGIC: Project Idea Tracker ---
 
 const ideaSchema = new mongoose.Schema({
-    title: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
+    title: { type: String, required: true, trim: true, maxlength: 200 },
+    description: { type: String, required: true, trim: true, maxlength: 2000 },
     createdAt: { type: Date, default: Date.now }
 });
 
